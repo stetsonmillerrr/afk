@@ -20,7 +20,6 @@
             align-items: center;
             height: 100vh;
             flex-direction: column;
-            transition: background-color 0.3s ease;
         }
 
         h1 {
@@ -48,7 +47,7 @@
             display: block;
         }
 
-        input, button, .slider {
+        input, button {
             width: 100%;
             padding: 12px;
             margin-top: 8px;
@@ -76,6 +75,7 @@
             flex-direction: column;
             align-items: center;
             margin-top: 30px;
+            width: 100%;
         }
 
         .rp-bar {
@@ -91,10 +91,10 @@
         }
 
         .rp-bar .dash {
-            width: 10%;
+            width: 9%;
             height: 10px;
             background-color: #555;
-            margin: 0 2px;
+            margin: 0 1%;
             border-radius: 5px;
         }
 
@@ -118,15 +118,16 @@
         }
 
         .rp-circle {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             background-color: #76c7c0;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: black;
+            margin: 0 5px;
         }
 
         .timer {
@@ -140,14 +141,21 @@
             color: #ffdd57;
         }
 
-        .input-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .status {
+            color: #76c7c0;
+            margin-top: 20px;
         }
 
-        .rp-slider {
-            width: 100%;
+        @media (max-width: 600px) {
+            .rp-bar {
+                height: 30px;
+            }
+
+            .rp-circle {
+                width: 24px;
+                height: 24px;
+                font-size: 0.6rem;
+            }
         }
     </style>
 </head>
@@ -162,23 +170,8 @@
         </div>
 
         <div class="input-group">
-            <label for="targetLevel">Target Level:</label>
-            <input type="number" id="targetLevel" placeholder="Enter your target level" />
-        </div>
-
-        <div class="input-group">
             <label for="intervalDuration">Interval Duration (seconds):</label>
             <input type="number" id="intervalDuration" placeholder="e.g., 30" />
-        </div>
-
-        <div class="input-group">
-            <label for="rpSlider">RP Progress:</label>
-            <input type="range" class="slider" id="rpSlider" min="0" max="100" value="50">
-        </div>
-
-        <div class="input-group">
-            <label for="barSelection">Select Bar of Progress:</label>
-            <input type="range" id="barSelection" min="0" max="10" step="1" value="5" />
         </div>
 
         <button id="startButton">Start Tracking</button>
@@ -202,7 +195,7 @@
                     <div class="dash" id="dash7"></div>
                     <div class="dash" id="dash8"></div>
                     <div class="dash" id="dash9"></div>
-                    <div class="rp-circle" id="nextLevelCircle">Lvl 2</div>
+                    <span class="rp-circle" id="nextLevelCircle">Lvl 2</span>
                 </div>
             </div>
         </div>
@@ -211,34 +204,25 @@
     </div>
 
     <script>
-        let currentRP, targetLevel, intervalDuration, totalRP, intervalsElapsed, currentLevel;
+        let currentRP, intervalDuration, totalRP, intervalsElapsed, currentLevel;
         let intervalTimer, countdownTimer;
+        let startTime;
 
-        // Define RP progression per level. (Realistic scaling for RP)
-        const levelRequirements = [
-            1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
-            11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000
-        ];
+        let rpLearnedValues = [];
 
-        function getRPForLevel(level) {
-            let requiredRP = 0;
-            for (let i = 0; i < level - 1; i++) {
-                requiredRP += levelRequirements[i];
-            }
-            return requiredRP;
-        }
-
+        // Helper function to get level from RP
         function getLevelFromRP(rp) {
             let level = 1;
             let totalRP = 0;
             while (rp >= totalRP) {
-                totalRP += levelRequirements[level - 1];
+                totalRP += 1000 * level;
                 if (rp < totalRP) break;
                 level++;
             }
             return level;
         }
 
+        // Update RP bar
         function updateRPBar(rp) {
             let levelStartRP = getRPForLevel(currentLevel);
             let levelEndRP = getRPForLevel(currentLevel + 1);
@@ -247,17 +231,84 @@
             document.getElementById("rpProgress").style.width = `${progress}%`;
         }
 
+        // Update Level Circles
         function updateLevelCircles() {
             document.getElementById("currentLevelCircle").textContent = `Lvl ${currentLevel}`;
             document.getElementById("nextLevelCircle").textContent = `Lvl ${currentLevel + 1}`;
         }
 
+        // Save progress in localStorage
+        function saveProgress() {
+            localStorage.setItem('currentRP', totalRP);
+            localStorage.setItem('intervalsElapsed', intervalsElapsed);
+            localStorage.setItem('currentLevel', currentLevel);
+            localStorage.setItem('startTime', startTime);
+        }
+
+        // Start tracking RP
+        function startTracking() {
+            startTime = Date.now();
+            intervalsElapsed = 0;
+            saveProgress();
+
+            intervalTimer = setInterval(() => {
+                intervalsElapsed++;
+                let rpUpdate = 300;
+                totalRP += rpUpdate;
+                currentLevel = getLevelFromRP(totalRP);
+                updateRPBar(totalRP);
+                updateLevelCircles();
+
+                saveProgress();
+            }, intervalDuration * 1000);
+
+            countdownTimer = setInterval(() => {
+                let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+                let timeLeft = intervalDuration - (elapsedTime % intervalDuration);
+                document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
+            }, 1000);
+        }
+
+        // Learn RP values periodically
+        function learnRP() {
+            const rpInput = prompt("Please enter your current RP:");
+            if (rpInput !== null && !isNaN(rpInput)) {
+                rpLearnedValues.push(parseInt(rpInput));
+                alert("RP data learned and added!");
+            }
+        }
+
+        // Load progress from localStorage
+        function loadProgress() {
+            const savedRP = localStorage.getItem('currentRP');
+            const savedLevel = localStorage.getItem('currentLevel');
+            const savedIntervalsElapsed = localStorage.getItem('intervalsElapsed');
+            const savedStartTime = localStorage.getItem('startTime');
+            
+            if (savedRP && savedLevel && savedIntervalsElapsed && savedStartTime) {
+                totalRP = parseInt(savedRP);
+                currentLevel = parseInt(savedLevel);
+                intervalsElapsed = parseInt(savedIntervalsElapsed);
+                startTime = parseInt(savedStartTime);
+
+                updateRPBar(totalRP);
+                updateLevelCircles();
+                document.getElementById('statusMessage').textContent = 'Tracking Resumed...';
+
+                // Update the countdown timer to the time remaining based on the start time
+                setInterval(() => {
+                    let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+                    let timeLeft = intervalDuration - (elapsedTime % intervalDuration);
+                    document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
+                }, 1000);
+            }
+        }
+
         document.getElementById('startButton').addEventListener('click', () => {
             currentRP = parseInt(document.getElementById('currentRP').value);
-            targetLevel = parseInt(document.getElementById('targetLevel').value);
             intervalDuration = parseInt(document.getElementById('intervalDuration').value);
 
-            if (isNaN(currentRP) || isNaN(targetLevel) || isNaN(intervalDuration)) {
+            if (isNaN(currentRP) || isNaN(intervalDuration)) {
                 alert('Please fill all fields with valid numbers');
                 return;
             }
@@ -272,6 +323,8 @@
             document.getElementById('stopButton').disabled = false;
 
             startTracking();
+
+            setInterval(learnRP, intervalDuration * 1000);
         });
 
         document.getElementById('stopButton').addEventListener('click', () => {
@@ -283,25 +336,8 @@
             document.getElementById('stopButton').disabled = true;
         });
 
-        function startTracking() {
-            intervalsElapsed = 0;
-
-            intervalTimer = setInterval(() => {
-                intervalsElapsed++;
-                totalRP += parseInt(document.getElementById('rpSlider').value); // Simulating RP increase over time
-                currentLevel = getLevelFromRP(totalRP);
-                updateRPBar(totalRP);
-                updateLevelCircles();
-
-                let remainingRP = getRPForLevel(targetLevel) - totalRP;
-                document.getElementById('predictedRP').textContent = `Predicted RP to Next Level: ${remainingRP}`;
-            }, intervalDuration * 1000);
-
-            countdownTimer = setInterval(() => {
-                let secondsLeft = intervalDuration - (Math.floor(Date.now() / 1000) % intervalDuration);
-                document.getElementById('countdown').textContent = `Timer: ${secondsLeft}s`;
-            }, 1000);
-        }
+        // Load progress on page refresh
+        window.onload = loadProgress;
     </script>
 
 </body>
