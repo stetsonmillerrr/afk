@@ -71,14 +71,31 @@
             cursor: not-allowed;
         }
 
+        .rp-bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+        }
+
         .rp-bar {
             width: 100%;
-            height: 30px;
-            border: 2px solid #76c7c0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background-color: #444;
             border-radius: 10px;
             position: relative;
             margin-top: 20px;
+        }
+
+        .rp-bar .dash {
+            width: 10%;
+            height: 10px;
+            background-color: #555;
+            margin: 0 2px;
+            border-radius: 5px;
         }
 
         .rp-progress {
@@ -91,14 +108,25 @@
         }
 
         .rp-levels {
-            position: absolute;
-            top: 35px;
-            left: 0;
-            width: 100%;
             font-size: 0.8rem;
             color: white;
             display: flex;
             justify-content: space-between;
+            width: 100%;
+            position: absolute;
+            top: -30px;
+        }
+
+        .rp-circle {
+            width: 30px;
+            height: 30px;
+            background-color: #76c7c0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            color: black;
         }
 
         .timer {
@@ -160,11 +188,22 @@
             <p id="countdown">Timer: 0s</p>
         </div>
 
-        <div class="rp-bar">
-            <div class="rp-progress" id="rpProgress"></div>
-            <div class="rp-levels">
-                <span id="levelStart">Level 1</span>
-                <span id="levelEnd">Level 2</span>
+        <div class="rp-bar-container">
+            <div class="rp-bar">
+                <div class="rp-progress" id="rpProgress"></div>
+                <div class="rp-levels">
+                    <span class="rp-circle" id="currentLevelCircle">Lvl 1</span>
+                    <div class="dash" id="dash1"></div>
+                    <div class="dash" id="dash2"></div>
+                    <div class="dash" id="dash3"></div>
+                    <div class="dash" id="dash4"></div>
+                    <div class="dash" id="dash5"></div>
+                    <div class="dash" id="dash6"></div>
+                    <div class="dash" id="dash7"></div>
+                    <div class="dash" id="dash8"></div>
+                    <div class="dash" id="dash9"></div>
+                    <div class="rp-circle" id="nextLevelCircle">Lvl 2</div>
+                </div>
             </div>
         </div>
 
@@ -206,8 +245,11 @@
             let progress = (rp - levelStartRP) / (levelEndRP - levelStartRP) * 100;
 
             document.getElementById("rpProgress").style.width = `${progress}%`;
-            document.getElementById("levelStart").textContent = `Level ${currentLevel}`;
-            document.getElementById("levelEnd").textContent = `Level ${currentLevel + 1}`;
+        }
+
+        function updateLevelCircles() {
+            document.getElementById("currentLevelCircle").textContent = `Lvl ${currentLevel}`;
+            document.getElementById("nextLevelCircle").textContent = `Lvl ${currentLevel + 1}`;
         }
 
         document.getElementById('startButton').addEventListener('click', () => {
@@ -223,6 +265,7 @@
             totalRP = currentRP;
             currentLevel = getLevelFromRP(currentRP);
             updateRPBar(totalRP);
+            updateLevelCircles();
 
             document.getElementById('statusMessage').textContent = 'Tracking Started...';
             document.getElementById('startButton').disabled = true;
@@ -248,6 +291,7 @@
                 totalRP += parseInt(document.getElementById('rpSlider').value); // Simulating RP increase over time
                 currentLevel = getLevelFromRP(totalRP);
                 updateRPBar(totalRP);
+                updateLevelCircles();
 
                 let remainingRP = getRPForLevel(targetLevel) - totalRP;
                 document.getElementById('predictedRP').textContent = `Predicted RP to Next Level: ${remainingRP}`;
