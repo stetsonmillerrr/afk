@@ -208,60 +208,56 @@
         let intervalTimer, countdownTimer;
         let startTime;
 
-        let rpLearnedValues = [];
+        const RP_PER_30_SECONDS = 300; // Fixed RP gain every 30 seconds
 
-        // Helper function to get level from RP
+        // Function to calculate level from RP
         function getLevelFromRP(rp) {
             let level = 1;
             let totalRP = 0;
             while (rp >= totalRP) {
-                totalRP += 1000 * level;
+                totalRP += 1000 * level;  // Example: The RP required per level increases as you progress
                 if (rp < totalRP) break;
                 level++;
             }
             return level;
         }
 
-        // Update RP bar
+        // Function to update the progress bar based on RP
         function updateRPBar(rp) {
-            let levelStartRP = getRPForLevel(currentLevel);
-            let levelEndRP = getRPForLevel(currentLevel + 1);
-            let progress = (rp - levelStartRP) / (levelEndRP - levelStartRP) * 100;
-
+            const maxRPForNextLevel = 1000 * (currentLevel + 1); // Example of max RP for next level
+            const progress = (rp % maxRPForNextLevel) / maxRPForNextLevel * 100;
             document.getElementById("rpProgress").style.width = `${progress}%`;
         }
 
-        // Update Level Circles
+        // Function to update the level circles
         function updateLevelCircles() {
             document.getElementById("currentLevelCircle").textContent = `Lvl ${currentLevel}`;
             document.getElementById("nextLevelCircle").textContent = `Lvl ${currentLevel + 1}`;
-        }
-
-        // Save progress in localStorage
-        function saveProgress() {
-            localStorage.setItem('currentRP', totalRP);
-            localStorage.setItem('intervalsElapsed', intervalsElapsed);
-            localStorage.setItem('currentLevel', currentLevel);
-            localStorage.setItem('startTime', startTime);
         }
 
         // Start tracking RP
         function startTracking() {
             startTime = Date.now();
             intervalsElapsed = 0;
-            saveProgress();
+            totalRP = currentRP;
+            currentLevel = getLevelFromRP(totalRP);
 
+            updateRPBar(totalRP);
+            updateLevelCircles();
+
+            document.getElementById('statusMessage').textContent = 'Tracking Started...';
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+
+            // Set interval for tracking RP every 30 seconds
             intervalTimer = setInterval(() => {
-                intervalsElapsed++;
-                let rpUpdate = 300;
-                totalRP += rpUpdate;
+                totalRP += RP_PER_30_SECONDS;
                 currentLevel = getLevelFromRP(totalRP);
                 updateRPBar(totalRP);
                 updateLevelCircles();
-
-                saveProgress();
             }, intervalDuration * 1000);
 
+            // Countdown timer for the 30-second interval
             countdownTimer = setInterval(() => {
                 let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
                 let timeLeft = intervalDuration - (elapsedTime % intervalDuration);
@@ -269,41 +265,17 @@
             }, 1000);
         }
 
-        // Learn RP values periodically
-        function learnRP() {
-            const rpInput = prompt("Please enter your current RP:");
-            if (rpInput !== null && !isNaN(rpInput)) {
-                rpLearnedValues.push(parseInt(rpInput));
-                alert("RP data learned and added!");
-            }
+        // Stop tracking RP
+        function stopTracking() {
+            clearInterval(intervalTimer);
+            clearInterval(countdownTimer);
+
+            document.getElementById('statusMessage').textContent = 'Tracking Stopped';
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
         }
 
-        // Load progress from localStorage
-        function loadProgress() {
-            const savedRP = localStorage.getItem('currentRP');
-            const savedLevel = localStorage.getItem('currentLevel');
-            const savedIntervalsElapsed = localStorage.getItem('intervalsElapsed');
-            const savedStartTime = localStorage.getItem('startTime');
-            
-            if (savedRP && savedLevel && savedIntervalsElapsed && savedStartTime) {
-                totalRP = parseInt(savedRP);
-                currentLevel = parseInt(savedLevel);
-                intervalsElapsed = parseInt(savedIntervalsElapsed);
-                startTime = parseInt(savedStartTime);
-
-                updateRPBar(totalRP);
-                updateLevelCircles();
-                document.getElementById('statusMessage').textContent = 'Tracking Resumed...';
-
-                // Update the countdown timer to the time remaining based on the start time
-                setInterval(() => {
-                    let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-                    let timeLeft = intervalDuration - (elapsedTime % intervalDuration);
-                    document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
-                }, 1000);
-            }
-        }
-
+        // Event listener for start button
         document.getElementById('startButton').addEventListener('click', () => {
             currentRP = parseInt(document.getElementById('currentRP').value);
             intervalDuration = parseInt(document.getElementById('intervalDuration').value);
@@ -313,31 +285,12 @@
                 return;
             }
 
-            totalRP = currentRP;
-            currentLevel = getLevelFromRP(currentRP);
-            updateRPBar(totalRP);
-            updateLevelCircles();
-
-            document.getElementById('statusMessage').textContent = 'Tracking Started...';
-            document.getElementById('startButton').disabled = true;
-            document.getElementById('stopButton').disabled = false;
-
             startTracking();
-
-            setInterval(learnRP, intervalDuration * 1000);
         });
 
-        document.getElementById('stopButton').addEventListener('click', () => {
-            clearInterval(intervalTimer);
-            clearInterval(countdownTimer);
+        // Event listener for stop button
+        document.getElementById('stopButton').addEventListener('click', stopTracking);
 
-            document.getElementById('statusMessage').textContent = 'Tracking Stopped';
-            document.getElementById('startButton').disabled = false;
-            document.getElementById('stopButton').disabled = true;
-        });
-
-        // Load progress on page refresh
-        window.onload = loadProgress;
     </script>
 
 </body>
