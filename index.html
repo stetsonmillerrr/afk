@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AFK RP Tracker</title>
+    <title>Smart GTA Online AFK RP Tracker</title>
     <style>
-        /* Global Styles */
         * {
             margin: 0;
             padding: 0;
@@ -29,7 +28,6 @@
             margin-bottom: 20px;
             text-align: center;
             color: #76c7c0;
-            transition: color 0.3s ease;
         }
 
         .container {
@@ -126,6 +124,16 @@
             color: #ffdd57;
         }
 
+        .graph-container {
+            margin-top: 20px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 150px;
+            border-radius: 8px;
+        }
+
         /* Mobile responsiveness */
         @media (max-width: 480px) {
             h1 {
@@ -158,7 +166,7 @@
 <body>
 
     <div class="container">
-        <h1>GTA Online AFK RP Tracker</h1>
+        <h1>Smart GTA Online AFK RP Tracker</h1>
 
         <div class="input-group">
             <label for="currentRP">Current RP:</label>
@@ -166,13 +174,13 @@
         </div>
 
         <div class="input-group">
-            <label for="targetRP">Target RP:</label>
-            <input type="number" id="targetRP" placeholder="Enter your target RP" />
+            <label for="currentLevel">Current Level:</label>
+            <input type="number" id="currentLevel" placeholder="Enter your current level" />
         </div>
 
         <div class="input-group">
-            <label for="initialRPGain">Initial RP Gain per Interval:</label>
-            <input type="number" id="initialRPGain" placeholder="e.g., 300" />
+            <label for="targetLevel">Target Level:</label>
+            <input type="number" id="targetLevel" placeholder="Enter your target level" />
         </div>
 
         <div class="input-group">
@@ -182,11 +190,14 @@
 
         <div>
             <button id="startButton">Start Tracking</button>
+            <button id="stopButton" disabled>Stop Tracking</button>
         </div>
 
         <div class="status" id="statusMessage">Not Started</div>
 
         <div class="result">
+            <p id="currentLevelDisplay">Current Level: 0</p>
+            <p id="targetLevelDisplay">Target Level: 0</p>
             <p id="predictedRP">Predicted RP Gained: 0</p>
             <p id="timeRemaining">Time Remaining: 0 minutes</p>
             <div class="progress-bar">
@@ -197,45 +208,67 @@
         <div class="timer">
             <p id="countdown">Timer: 0s</p>
         </div>
+
+        <div class="graph-container">
+            <canvas id="rpGraph"></canvas>
+        </div>
     </div>
 
     <script>
-        let currentRP, targetRP, rpPerInterval, intervalDuration, totalRP, intervalsElapsed;
+        let currentRP, currentLevel, targetLevel, intervalDuration, totalRP, intervalsElapsed;
         let intervalTimer, countdownTimer;
         let estimatedRPGain = 0;
+        let rpHistory = [];
+        let learningRate = 0.1;
         let smoothingFactor = 0.1;
-        let adjustmentHistory = [];
-        let adaptiveLearningRate = 0.1;
+
+        const rpPerLevel = 1000; // Approximate RP per level
+        const canvas = document.getElementById('rpGraph');
+        const ctx = canvas.getContext('2d');
+
+        let graphData = [];
 
         document.getElementById('startButton').addEventListener('click', () => {
             currentRP = parseInt(document.getElementById('currentRP').value);
-            targetRP = parseInt(document.getElementById('targetRP').value);
-            rpPerInterval = parseInt(document.getElementById('initialRPGain').value);
+            currentLevel = parseInt(document.getElementById('currentLevel').value);
+            targetLevel = parseInt(document.getElementById('targetLevel').value);
             intervalDuration = parseInt(document.getElementById('intervalDuration').value);
 
-            if (isNaN(currentRP) || isNaN(targetRP) || isNaN(rpPerInterval) || isNaN(intervalDuration)) {
+            if (isNaN(currentRP) || isNaN(currentLevel) || isNaN(targetLevel) || isNaN(intervalDuration)) {
                 alert('Please fill all fields with valid numbers');
                 return;
             }
 
             totalRP = currentRP;
             intervalsElapsed = 0;
-            estimatedRPGain = rpPerInterval;
+            estimatedRPGain = 300;
+
+            // Convert levels to RP
+            const rpTarget = (targetLevel - 1) * rpPerLevel;
 
             document.getElementById('statusMessage').textContent = 'Tracking Started...';
             document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
 
-            startCountdown();
+            startCountdown(rpTarget);
         });
 
-        function startCountdown() {
+        document.getElementById('stopButton').addEventListener('click', () => {
+            clearInterval(countdownTimer);
+            document.getElementById('statusMessage').textContent = 'Tracking Stopped';
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+            saveProgress();
+        });
+
+        function startCountdown(rpTarget) {
             let timeLeft = intervalDuration;
 
             countdownTimer = setInterval(() => {
                 if (timeLeft <= 0) {
                     clearInterval(countdownTimer);
-                    updateRP();
-                    startCountdown();
+                    updateRP(rpTarget);
+                    startCountdown(rpTarget);
                 } else {
                     document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
                     let progressPercentage = ((intervalDuration - timeLeft) / intervalDuration) * 100;
@@ -245,17 +278,19 @@
             }, 1000);
         }
 
-        function updateRP() {
+        function updateRP(rpTarget) {
             totalRP += estimatedRPGain;
             intervalsElapsed++;
 
             updateProgressBar();
             updateStatus();
 
-            if (totalRP >= targetRP) {
+            if (totalRP >= rpTarget) {
                 clearInterval(countdownTimer);
-                document.getElementById('statusMessage').textContent = 'Target RP reached!';
+                document.getElementById('statusMessage').textContent = 'Target Level Reached!';
                 document.getElementById('startButton').disabled = false;
+                document.getElementById('stopButton').disabled = true;
+                saveProgress();
             }
 
             const userRP = prompt("How much RP did you gain this time? (e.g., 300)");
@@ -270,24 +305,26 @@
         }
 
         function updateProgressBar() {
-            let progressPercentage = (totalRP / targetRP) * 100;
+            let progressPercentage = (totalRP / (targetLevel - 1) * rpPerLevel) * 100;
             document.getElementById('progressBar').style.width = `${progressPercentage}%`;
 
-            let timeRemaining = ((targetRP - totalRP) / estimatedRPGain) * intervalDuration;
+            let timeRemaining = ((targetLevel - 1) * rpPerLevel - totalRP) / estimatedRPGain * intervalDuration;
             let minutesRemaining = Math.floor(timeRemaining / 60);
             document.getElementById('timeRemaining').textContent = `Time Remaining: ${minutesRemaining} minutes`;
             document.getElementById('predictedRP').textContent = `Predicted RP Gained: ${estimatedRPGain * intervalsElapsed}`;
         }
 
         function updateStatus() {
+            let currentLevelEstimate = Math.floor(totalRP / rpPerLevel) + 1;
+            document.getElementById('currentLevelDisplay').textContent = `Current Level: ${currentLevelEstimate}`;
             document.getElementById('statusMessage').textContent = `Tracking RP... | RP: ${totalRP}`;
         }
 
         function adjustRPGain(userRP = null) {
             if (userRP !== null) {
                 let currentError = userRP - estimatedRPGain;
-                adjustmentHistory.push(currentError);
-                let smoothedError = adjustmentHistory.reduce((acc, error) => acc + error, 0) / adjustmentHistory.length;
+                rpHistory.push(currentError);
+                let smoothedError = rpHistory.reduce((acc, error) => acc + error, 0) / rpHistory.length;
                 estimatedRPGain = estimatedRPGain + smoothingFactor * smoothedError;
                 estimatedRPGain = Math.max(50, Math.min(1000, estimatedRPGain));
             }
@@ -295,12 +332,39 @@
 
         function adjustLearningRate() {
             if (intervalsElapsed < 20) {
-                adaptiveLearningRate = 0.1 + (0.9 * intervalsElapsed / 20);
+                learningRate = 0.1 + (0.9 * intervalsElapsed / 20);
             } else {
-                adaptiveLearningRate = 0.1;
+                learningRate = 0.1;
             }
-            smoothingFactor = adaptiveLearningRate;
+            smoothingFactor = learningRate;
         }
+
+        function saveProgress() {
+            localStorage.setItem('totalRP', totalRP);
+            localStorage.setItem('intervalsElapsed', intervalsElapsed);
+            localStorage.setItem('rpHistory', JSON.stringify(rpHistory));
+        }
+
+        function drawGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            graphData.forEach((data, index) => {
+                ctx.lineTo(index * (canvas.width / graphData.length), canvas.height - (data / 1000) * canvas.height);
+            });
+            ctx.strokeStyle = "#76c7c0";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function loadProgress() {
+            totalRP = parseFloat(localStorage.getItem('totalRP') || '0');
+            intervalsElapsed = parseInt(localStorage.getItem('intervalsElapsed') || '0');
+            rpHistory = JSON.parse(localStorage.getItem('rpHistory') || '[]');
+            drawGraph();
+        }
+
+        loadProgress();
     </script>
 
 </body>
