@@ -210,21 +210,25 @@
 
         const RP_PER_30_SECONDS = 300; // Fixed RP gain every 30 seconds
 
-        // Function to calculate level from RP
+        // Function to calculate level from RP based on GTA Online's RP requirements
         function getLevelFromRP(rp) {
             let level = 1;
             let totalRP = 0;
+            let increment = 1000;  // Starting RP per level
+
+            // Simulating RP progression (can be adjusted based on actual GTA data)
             while (rp >= totalRP) {
-                totalRP += 1000 * level;  // Example: The RP required per level increases as you progress
-                if (rp < totalRP) break;
+                totalRP += increment;
+                increment += 100;  // Increase RP required per level after each level
                 level++;
             }
+
             return level;
         }
 
         // Function to update the progress bar based on RP
         function updateRPBar(rp) {
-            const maxRPForNextLevel = 1000 * (currentLevel + 1); // Example of max RP for next level
+            const maxRPForNextLevel = 1000 * currentLevel;  // Example of max RP for next level
             const progress = (rp % maxRPForNextLevel) / maxRPForNextLevel * 100;
             document.getElementById("rpProgress").style.width = `${progress}%`;
         }
