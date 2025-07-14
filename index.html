@@ -1,301 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart GTA Online AFK RP Tracker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GTA Online Smart RP Tracker</title>
+  <style>
+    body {
+      background: #121212;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #121212;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
+    h1 {
+      color: #76c7c0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #76c7c0;
-        }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 600px;
-            padding: 20px;
-            background-color: #1f1f1f;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
-        }
+    input {
+      width: 200px;
+    }
 
-        .input-group {
-            margin: 20px 0;
-        }
+    button {
+      background: #76c7c0;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-        label {
-            font-size: 1rem;
-            margin-bottom: 8px;
-            display: block;
-        }
+    .bar-container {
+      margin-top: 30px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
 
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            font-size: 1rem;
-            border-radius: 8px;
-            border: none;
-            outline: none;
-            background-color: #333;
-            color: white;
-        }
+    .level-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
 
-        button {
-            background-color: #76c7c0;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    .level-circle {
+      background: #76c7c0;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: black;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
 
-        button:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-        }
+    .progress-bar {
+      display: flex;
+      justify-content: space-between;
+      background: #333;
+      padding: 5px;
+      border-radius: 5px;
+    }
 
-        .rp-bar-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 30px;
-            width: 100%;
-        }
+    .segment {
+      flex: 1;
+      height: 20px;
+      margin: 0 2px;
+      background: #222;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
 
-        .rp-bar {
-            width: 100%;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #444;
-            border-radius: 10px;
-            position: relative;
-            margin-top: 20px;
-        }
+    .fill {
+      background: #76c7c0;
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
 
-        .rp-bar .dash {
-            width: 9%;
-            height: 10px;
-            background-color: #555;
-            margin: 0 1%;
-            border-radius: 5px;
-        }
+    .timer {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #ffdd57;
+    }
 
-        .rp-progress {
-            height: 100%;
-            background-color: #76c7c0;
-            border-radius: 10px;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        .rp-levels {
-            font-size: 0.8rem;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            position: absolute;
-            top: -30px;
-        }
-
-        .rp-circle {
-            width: 28px;
-            height: 28px;
-            background-color: #76c7c0;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.7rem;
-            color: black;
-            margin: 0 5px;
-        }
-
-        .timer {
-            font-size: 1.5rem;
-            margin-top: 15px;
-            color: #76c7c0;
-        }
-
-        .countdown {
-            font-size: 1.2rem;
-            color: #ffdd57;
-        }
-
-        .status {
-            color: #76c7c0;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .rp-bar {
-                height: 30px;
-            }
-
-            .rp-circle {
-                width: 24px;
-                height: 24px;
-                font-size: 0.6rem;
-            }
-        }
-    </style>
+    #rpText {
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Smart GTA Online AFK RP Tracker</h1>
+  <h1>GTA Online Smart RP Tracker</h1>
 
-        <div class="input-group">
-            <label for="currentRP">Current RP:</label>
-            <input type="number" id="currentRP" placeholder="Enter your current RP" />
-        </div>
+  <input type="number" id="currentRP" placeholder="Enter current RP"/>
+  <input type="number" id="interval" placeholder="Interval seconds" value="30"/>
+  <button onclick="startTracking()">Start Tracking</button>
 
-        <div class="input-group">
-            <label for="intervalDuration">Interval Duration (seconds):</label>
-            <input type="number" id="intervalDuration" placeholder="e.g., 30" />
-        </div>
-
-        <button id="startButton">Start Tracking</button>
-        <button id="stopButton" disabled>Stop Tracking</button>
-
-        <div class="timer" id="timer">
-            <p id="countdown">Timer: 0s</p>
-        </div>
-
-        <div class="rp-bar-container">
-            <div class="rp-bar">
-                <div class="rp-progress" id="rpProgress"></div>
-                <div class="rp-levels">
-                    <span class="rp-circle" id="currentLevelCircle">Lvl 1</span>
-                    <div class="dash" id="dash1"></div>
-                    <div class="dash" id="dash2"></div>
-                    <div class="dash" id="dash3"></div>
-                    <div class="dash" id="dash4"></div>
-                    <div class="dash" id="dash5"></div>
-                    <div class="dash" id="dash6"></div>
-                    <div class="dash" id="dash7"></div>
-                    <div class="dash" id="dash8"></div>
-                    <div class="dash" id="dash9"></div>
-                    <span class="rp-circle" id="nextLevelCircle">Lvl 2</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="status" id="statusMessage">Not Started</div>
+  <div class="bar-container">
+    <div class="level-display">
+      <div class="level-circle" id="currentLevel">--</div>
+      <div class="level-circle" id="nextLevel">--</div>
     </div>
+    <div class="progress-bar" id="progressBar"></div>
+    <div id="rpText"></div>
+  </div>
 
-    <script>
-        let currentRP, intervalDuration, totalRP, intervalsElapsed, currentLevel;
-        let intervalTimer, countdownTimer;
-        let startTime;
+  <div class="timer" id="timer">Timer: 0s</div>
 
-        const RP_PER_30_SECONDS = 300; // Fixed RP gain every 30 seconds
+  <script>
+    const rpTable = [
+      0,800,2100,3800,6100,9500,12500,16000,19800,24000,
+      28500,33400,38700,44200,50200,56500,63200,70200,77500,85100,
+      93000,101200,109600,118200,127000,136100 // up to level 25+
+    ];
 
-        // Function to calculate level from RP based on GTA Online's RP requirements
-        function getLevelFromRP(rp) {
-            let level = 1;
-            let totalRP = 0;
-            let increment = 1000;  // Starting RP per level
+    let startTime, intervalId, countdownId, currentRP, interval;
 
-            // Simulating RP progression (can be adjusted based on actual GTA data)
-            while (rp >= totalRP) {
-                totalRP += increment;
-                increment += 100;  // Increase RP required per level after each level
-                level++;
-            }
+    function getLevel(rp) {
+      for (let i = 1; i < rpTable.length; i++) {
+        if (rp < rpTable[i]) return i;
+      }
+      return rpTable.length - 1;
+    }
 
-            return level;
+    function updateBar() {
+      let lvl = getLevel(currentRP);
+      let levelStartRP = rpTable[lvl-1];
+      let levelEndRP = rpTable[lvl];
+      let rpGained = currentRP - levelStartRP;
+      let rpNeeded = levelEndRP - levelStartRP;
+      let percent = rpGained / rpNeeded;
+
+      document.getElementById('currentLevel').innerText = lvl;
+      document.getElementById('nextLevel').innerText = lvl + 1;
+
+      const progressBar = document.getElementById('progressBar');
+      progressBar.innerHTML = '';
+
+      let totalBars = 10;
+      let barsFilled = percent * totalBars;
+
+      for (let i = 0; i < totalBars; i++) {
+        let seg = document.createElement('div');
+        seg.className = 'segment';
+
+        let fill = document.createElement('div');
+        fill.className = 'fill';
+
+        if (i < Math.floor(barsFilled)) {
+          fill.style.width = '100%';
+        } else if (i === Math.floor(barsFilled)) {
+          fill.style.width = ((barsFilled - i) * 100) + '%';
+        } else {
+          fill.style.width = '0%';
         }
 
-        // Function to update the progress bar based on RP
-        function updateRPBar(rp) {
-            const maxRPForNextLevel = 1000 * currentLevel;  // Example of max RP for next level
-            const progress = (rp % maxRPForNextLevel) / maxRPForNextLevel * 100;
-            document.getElementById("rpProgress").style.width = `${progress}%`;
+        seg.appendChild(fill);
+        progressBar.appendChild(seg);
+      }
+
+      document.getElementById('rpText').innerText = `${currentRP.toLocaleString()} / ${levelEndRP.toLocaleString()}`;
+    }
+
+    function addRP(amount) {
+      currentRP += amount;
+
+      let lvl = getLevel(currentRP);
+      while (currentRP >= rpTable[lvl]) {
+        lvl++;
+        if (lvl >= rpTable.length) break; // prevent overflow if at max level
+      }
+
+      updateBar();
+    }
+
+    function startTracking() {
+      currentRP = parseInt(document.getElementById('currentRP').value);
+      interval = parseInt(document.getElementById('interval').value);
+
+      if (isNaN(currentRP) || isNaN(interval)) {
+        alert("Please enter valid numbers");
+        return;
+      }
+
+      updateBar();
+      startTime = Date.now();
+
+      intervalId = setInterval(() => {
+        addRP(300);
+
+        let userInput = prompt("Enter your new RP if it changed (leave blank to continue with prediction):");
+        if (userInput) {
+          currentRP = parseInt(userInput);
+          updateBar();
         }
 
-        // Function to update the level circles
-        function updateLevelCircles() {
-            document.getElementById("currentLevelCircle").textContent = `Lvl ${currentLevel}`;
-            document.getElementById("nextLevelCircle").textContent = `Lvl ${currentLevel + 1}`;
-        }
+      }, interval * 1000);
 
-        // Start tracking RP
-        function startTracking() {
-            startTime = Date.now();
-            intervalsElapsed = 0;
-            totalRP = currentRP;
-            currentLevel = getLevelFromRP(totalRP);
-
-            updateRPBar(totalRP);
-            updateLevelCircles();
-
-            document.getElementById('statusMessage').textContent = 'Tracking Started...';
-            document.getElementById('startButton').disabled = true;
-            document.getElementById('stopButton').disabled = false;
-
-            // Set interval for tracking RP every 30 seconds
-            intervalTimer = setInterval(() => {
-                totalRP += RP_PER_30_SECONDS;
-                currentLevel = getLevelFromRP(totalRP);
-                updateRPBar(totalRP);
-                updateLevelCircles();
-            }, intervalDuration * 1000);
-
-            // Countdown timer for the 30-second interval
-            countdownTimer = setInterval(() => {
-                let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-                let timeLeft = intervalDuration - (elapsedTime % intervalDuration);
-                document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
-            }, 1000);
-        }
-
-        // Stop tracking RP
-        function stopTracking() {
-            clearInterval(intervalTimer);
-            clearInterval(countdownTimer);
-
-            document.getElementById('statusMessage').textContent = 'Tracking Stopped';
-            document.getElementById('startButton').disabled = false;
-            document.getElementById('stopButton').disabled = true;
-        }
-
-        // Event listener for start button
-        document.getElementById('startButton').addEventListener('click', () => {
-            currentRP = parseInt(document.getElementById('currentRP').value);
-            intervalDuration = parseInt(document.getElementById('intervalDuration').value);
-
-            if (isNaN(currentRP) || isNaN(intervalDuration)) {
-                alert('Please fill all fields with valid numbers');
-                return;
-            }
-
-            startTracking();
-        });
-
-        // Event listener for stop button
-        document.getElementById('stopButton').addEventListener('click', stopTracking);
-
-    </script>
+      countdownId = setInterval(() => {
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        let left = interval - (elapsed % interval);
+        document.getElementById('timer').innerText = `Timer: ${left}s`;
+      }, 1000);
+    }
+  </script>
 
 </body>
 </html>
