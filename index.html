@@ -94,21 +94,39 @@
             margin-top: 20px;
         }
 
-        .progress-bar {
+        .rp-bar {
             width: 100%;
-            height: 10px;
+            height: 20px;
+            border: 2px solid #76c7c0;
             background-color: #444;
-            border-radius: 5px;
-            margin-top: 10px;
-            overflow: hidden;
+            border-radius: 10px;
+            position: relative;
+            margin-top: 20px;
         }
 
-        .progress {
-            width: 0;
+        .rp-progress {
             height: 100%;
             background-color: #76c7c0;
-            border-radius: 5px;
-            transition: width 0.5s ease;
+            border-radius: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .rp-levels {
+            position: absolute;
+            top: 25px;
+            left: 0;
+            width: 100%;
+            font-size: 0.8rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .rp-levels span {
+            position: absolute;
+            bottom: -10px;
         }
 
         .timer {
@@ -122,16 +140,6 @@
             font-size: 1.2rem;
             font-weight: bold;
             color: #ffdd57;
-        }
-
-        .graph-container {
-            margin-top: 20px;
-        }
-
-        canvas {
-            width: 100%;
-            height: 150px;
-            border-radius: 8px;
         }
 
         /* Mobile responsiveness */
@@ -170,7 +178,7 @@
 
         <div class="input-group">
             <label for="currentRP">Current RP:</label>
-            <input type="number" id="currentRP" placeholder="Enter your current RP" />
+            <input type="number" id="currentRP" placeholder="Enter your exact current RP" />
         </div>
 
         <div class="input-group">
@@ -200,34 +208,30 @@
             <p id="targetLevelDisplay">Target Level: 0</p>
             <p id="predictedRP">Predicted RP Gained: 0</p>
             <p id="timeRemaining">Time Remaining: 0 minutes</p>
-            <div class="progress-bar">
-                <div class="progress" id="progressBar"></div>
+        </div>
+
+        <div class="rp-bar">
+            <div class="rp-progress" id="rpProgress"></div>
+            <div class="rp-levels">
+                <span id="levelStart">Level 1</span>
+                <span id="levelEnd">Level 2</span>
             </div>
         </div>
 
         <div class="timer">
             <p id="countdown">Timer: 0s</p>
         </div>
-
-        <div class="graph-container">
-            <canvas id="rpGraph"></canvas>
-        </div>
     </div>
 
     <script>
         let currentRP, currentLevel, targetLevel, intervalDuration, totalRP, intervalsElapsed;
         let intervalTimer, countdownTimer;
-        let estimatedRPGain = 0;
-        let rpHistory = [];
-        let learningRate = 0.1;
-        let smoothingFactor = 0.1;
-
-        const rpPerLevel = 1000; // Approximate RP per level
-        const canvas = document.getElementById('rpGraph');
-        const ctx = canvas.getContext('2d');
-
-        let graphData = [];
-
+        const rpPerLevel = 1000; // Approximate RP per level (simple calculation)
+        const rpForNextLevel = (level) => level * rpPerLevel; // Calculate RP for each level
+        const rpProgress = document.getElementById('rpProgress');
+        const levelStart = document.getElementById('levelStart');
+        const levelEnd = document.getElementById('levelEnd');
+        
         document.getElementById('startButton').addEventListener('click', () => {
             currentRP = parseInt(document.getElementById('currentRP').value);
             currentLevel = parseInt(document.getElementById('currentLevel').value);
@@ -241,131 +245,48 @@
 
             totalRP = currentRP;
             intervalsElapsed = 0;
-            estimatedRPGain = 300;
 
-            // Convert levels to RP
-            const rpTarget = (targetLevel - 1) * rpPerLevel;
-
+            // Update UI
             document.getElementById('statusMessage').textContent = 'Tracking Started...';
             document.getElementById('startButton').disabled = true;
             document.getElementById('stopButton').disabled = false;
 
-            startCountdown(rpTarget);
+            // Set the RP bar
+            updateRPBar(currentRP);
+
+            startTracking();
         });
 
         document.getElementById('stopButton').addEventListener('click', () => {
+            clearInterval(intervalTimer);
             clearInterval(countdownTimer);
             document.getElementById('statusMessage').textContent = 'Tracking Stopped';
             document.getElementById('startButton').disabled = false;
             document.getElementById('stopButton').disabled = true;
-            saveProgress();
         });
 
-        function startCountdown(rpTarget) {
-            let timeLeft = intervalDuration;
+        function startTracking() {
+            intervalTimer = setInterval(() => {
+                totalRP += rpPerLevel; // Increase RP every interval
+                updateRPBar(totalRP);
+            }, intervalDuration * 1000);
 
             countdownTimer = setInterval(() => {
-                if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
-                    updateRP(rpTarget);
-                    startCountdown(rpTarget);
-                } else {
-                    document.getElementById('countdown').textContent = `Timer: ${timeLeft}s`;
-                    let progressPercentage = ((intervalDuration - timeLeft) / intervalDuration) * 100;
-                    document.getElementById('progressBar').style.width = `${progressPercentage}%`;
-                    timeLeft--;
-                }
-            }, 1000);
+                const remainingTime = Math.floor((targetLevel * rpPerLevel - totalRP) / rpPerLevel);
+                document.getElementById('timeRemaining').textContent = `Time Remaining: ${remainingTime} minutes`;
+            }, 60000);
         }
 
-        function updateRP(rpTarget) {
-            totalRP += estimatedRPGain;
-            intervalsElapsed++;
+        function updateRPBar(rp) {
+            const maxRP = rpForNextLevel(currentLevel + 1);
+            const progressPercentage = Math.min((rp / maxRP) * 100, 100);
+            rpProgress.style.width = `${progressPercentage}%`;
 
-            updateProgressBar();
-            updateStatus();
-
-            if (totalRP >= rpTarget) {
-                clearInterval(countdownTimer);
-                document.getElementById('statusMessage').textContent = 'Target Level Reached!';
-                document.getElementById('startButton').disabled = false;
-                document.getElementById('stopButton').disabled = true;
-                saveProgress();
-            }
-
-            const userRP = prompt("How much RP did you gain this time? (e.g., 300)");
-
-            if (userRP && !isNaN(userRP)) {
-                adjustRPGain(parseInt(userRP));
-            } else {
-                adjustRPGain();
-            }
-
-            adjustLearningRate();
+            levelStart.textContent = `Level ${currentLevel}`;
+            levelEnd.textContent = `Level ${currentLevel + 1}`;
+            document.getElementById('currentLevelDisplay').textContent = `Current Level: ${currentLevel}`;
+            document.getElementById('predictedRP').textContent = `Predicted RP Gained: ${totalRP}`;
         }
-
-        function updateProgressBar() {
-            let progressPercentage = (totalRP / (targetLevel - 1) * rpPerLevel) * 100;
-            document.getElementById('progressBar').style.width = `${progressPercentage}%`;
-
-            let timeRemaining = ((targetLevel - 1) * rpPerLevel - totalRP) / estimatedRPGain * intervalDuration;
-            let minutesRemaining = Math.floor(timeRemaining / 60);
-            document.getElementById('timeRemaining').textContent = `Time Remaining: ${minutesRemaining} minutes`;
-            document.getElementById('predictedRP').textContent = `Predicted RP Gained: ${estimatedRPGain * intervalsElapsed}`;
-        }
-
-        function updateStatus() {
-            let currentLevelEstimate = Math.floor(totalRP / rpPerLevel) + 1;
-            document.getElementById('currentLevelDisplay').textContent = `Current Level: ${currentLevelEstimate}`;
-            document.getElementById('statusMessage').textContent = `Tracking RP... | RP: ${totalRP}`;
-        }
-
-        function adjustRPGain(userRP = null) {
-            if (userRP !== null) {
-                let currentError = userRP - estimatedRPGain;
-                rpHistory.push(currentError);
-                let smoothedError = rpHistory.reduce((acc, error) => acc + error, 0) / rpHistory.length;
-                estimatedRPGain = estimatedRPGain + smoothingFactor * smoothedError;
-                estimatedRPGain = Math.max(50, Math.min(1000, estimatedRPGain));
-            }
-        }
-
-        function adjustLearningRate() {
-            if (intervalsElapsed < 20) {
-                learningRate = 0.1 + (0.9 * intervalsElapsed / 20);
-            } else {
-                learningRate = 0.1;
-            }
-            smoothingFactor = learningRate;
-        }
-
-        function saveProgress() {
-            localStorage.setItem('totalRP', totalRP);
-            localStorage.setItem('intervalsElapsed', intervalsElapsed);
-            localStorage.setItem('rpHistory', JSON.stringify(rpHistory));
-        }
-
-        function drawGraph() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height);
-            graphData.forEach((data, index) => {
-                ctx.lineTo(index * (canvas.width / graphData.length), canvas.height - (data / 1000) * canvas.height);
-            });
-            ctx.strokeStyle = "#76c7c0";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-
-        function loadProgress() {
-            totalRP = parseFloat(localStorage.getItem('totalRP') || '0');
-            intervalsElapsed = parseInt(localStorage.getItem('intervalsElapsed') || '0');
-            rpHistory = JSON.parse(localStorage.getItem('rpHistory') || '[]');
-            drawGraph();
-        }
-
-        loadProgress();
     </script>
-
 </body>
 </html>
